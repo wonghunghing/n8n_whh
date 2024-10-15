@@ -53,6 +53,7 @@ export { ExpressionExtensions } from './Extensions';
 export * as ExpressionParser from './Extensions/ExpressionParser';
 export { NativeMethods } from './NativeMethods';
 export * from './NodeParameters/FilterParameter';
+export * from './CredentialSchema/CredentialSchema';
 
 export type {
 	DocMetadata,
