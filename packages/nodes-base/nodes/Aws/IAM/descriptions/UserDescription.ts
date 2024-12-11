@@ -2,8 +2,8 @@ import type { INodeProperties } from 'n8n-workflow';
 
 import {
 	handleErrorPostReceive,
+	handlePagination,
 	presendFields,
-	presendTest,
 	processUsersResponse,
 } from '../GenericFunctions';
 
@@ -46,10 +46,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Create user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -106,11 +103,15 @@ export const userOperations: INodeProperties[] = [
 				routing: {
 					send: {
 						paginate: true,
-						preSend: [presendTest, presendFields],
 					},
+					operations: { pagination: handlePagination },
 					request: {
 						method: 'POST',
 						url: '/?Action=ListUsers&Version=2010-05-08',
+						qs: {
+							pageSize:
+								'={{ $parameter["limit"] ? ($parameter["limit"] < 60 ? $parameter["limit"] : 60) : 60 }}',
+						},
 						ignoreHttpStatusErrors: true,
 					},
 					output: {
@@ -145,10 +146,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Update user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -316,6 +314,13 @@ const getAllFields: INodeProperties[] = [
 				resource: ['user'],
 				operation: ['getAll'],
 				returnAll: [false],
+			},
+		},
+		routing: {
+			send: {
+				property: 'Limit',
+				type: 'query',
+				value: '={{ $value }}',
 			},
 		},
 		type: 'number',
