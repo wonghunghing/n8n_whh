@@ -2,8 +2,8 @@ import type { INodeProperties } from 'n8n-workflow';
 
 import {
 	handleErrorPostReceive,
+	handlePagination,
 	presendFields,
-	presendTest,
 	processUsersResponse,
 	validatePath,
 } from '../GenericFunctions';
@@ -28,10 +28,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Add user to group',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -50,10 +47,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Create user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -72,10 +66,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Delete user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -94,10 +85,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Get user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -114,16 +102,17 @@ export const userOperations: INodeProperties[] = [
 				value: 'getAll',
 				description: 'Retrieve a list of users',
 				routing: {
-					// send: {
-					// 	paginate: true,
-					//  preSend: [presendFields]
-					// },
 					send: {
-						preSend: [presendTest], // ToDo: Remove this line before completing the pull request
+						paginate: true,
 					},
+					operations: { pagination: handlePagination },
 					request: {
 						method: 'POST',
 						url: '/?Action=ListUsers&Version=2010-05-08',
+						qs: {
+							pageSize:
+								'={{ $parameter["limit"] ? ($parameter["limit"] < 60 ? $parameter["limit"] : 60) : 60 }}',
+						},
 						ignoreHttpStatusErrors: true,
 					},
 					output: {
@@ -139,10 +128,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Remove user from group',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -161,10 +147,7 @@ export const userOperations: INodeProperties[] = [
 				action: 'Update user',
 				routing: {
 					send: {
-						preSend: [
-							presendTest, // ToDo: Remove this line before completing the pull request
-							presendFields,
-						],
+						preSend: [presendFields],
 					},
 					request: {
 						method: 'POST',
@@ -353,7 +336,6 @@ const getAllFields: INodeProperties[] = [
 				property: 'Limit',
 				type: 'query',
 				value: '={{ $value }}',
-				preSend: [presendTest],
 			},
 		},
 		type: 'number',
