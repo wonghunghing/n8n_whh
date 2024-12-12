@@ -102,9 +102,12 @@ export const userOperations: INodeProperties[] = [
 				description: 'Retrieve a list of users',
 				routing: {
 					send: {
+						preSend: [presendFields],
 						paginate: true,
 					},
-					operations: { pagination: handlePagination },
+					operations: {
+						pagination: handlePagination,
+					},
 					request: {
 						method: 'POST',
 						url: '/?Action=ListUsers&Version=2010-05-08',
@@ -318,7 +321,7 @@ const getAllFields: INodeProperties[] = [
 		},
 		routing: {
 			send: {
-				property: 'Limit',
+				property: '$top',
 				type: 'query',
 				value: '={{ $value }}',
 			},
