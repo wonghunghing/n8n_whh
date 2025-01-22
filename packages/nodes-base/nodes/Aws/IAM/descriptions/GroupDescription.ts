@@ -3,7 +3,7 @@ import type { INodeProperties } from 'n8n-workflow';
 import {
 	handleErrorPostReceive,
 	handlePagination,
-	presendFields,
+	presendGroupFields,
 	processGroupsResponse,
 } from '../GenericFunctions';
 
@@ -26,7 +26,7 @@ export const groupOperations: INodeProperties[] = [
 				description: 'Create a new group',
 				routing: {
 					send: {
-						preSend: [presendFields],
+						preSend: [presendGroupFields],
 					},
 					request: {
 						method: 'POST',
@@ -45,7 +45,7 @@ export const groupOperations: INodeProperties[] = [
 				description: 'Delete an existing group',
 				routing: {
 					send: {
-						preSend: [presendFields],
+						preSend: [presendGroupFields],
 					},
 					request: {
 						method: 'POST',
@@ -64,7 +64,7 @@ export const groupOperations: INodeProperties[] = [
 				description: 'Retrieve details of an existing group',
 				routing: {
 					send: {
-						preSend: [presendFields],
+						preSend: [presendGroupFields],
 					},
 					request: {
 						method: 'POST',
@@ -72,7 +72,14 @@ export const groupOperations: INodeProperties[] = [
 						ignoreHttpStatusErrors: true,
 					},
 					output: {
-						postReceive: [handleErrorPostReceive],
+						postReceive: [
+							{
+								type: 'rootProperty',
+								properties: {
+									property: 'GetGroupResponse.GetGroupResult.Group',
+								},
+							},
+						],
 					},
 				},
 				action: 'Get group',
@@ -83,7 +90,7 @@ export const groupOperations: INodeProperties[] = [
 				description: 'Retrieve a list of groups',
 				routing: {
 					send: {
-						preSend: [presendFields],
+						preSend: [presendGroupFields],
 						paginate: true,
 					},
 					operations: {
@@ -110,7 +117,7 @@ export const groupOperations: INodeProperties[] = [
 				description: 'Update an existing group',
 				routing: {
 					send: {
-						preSend: [presendFields],
+						preSend: [presendGroupFields],
 					},
 					request: {
 						method: 'POST',
@@ -145,8 +152,8 @@ const createFields: INodeProperties[] = [
 		validateType: 'string',
 	},
 	{
-		displayName: 'Options',
-		name: 'options',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
 		default: {},
 		displayOptions: {
 			show: {
@@ -351,8 +358,8 @@ const updateFields: INodeProperties[] = [
 		type: 'resourceLocator',
 	},
 	{
-		displayName: 'Options',
-		name: 'options',
+		displayName: 'Additional Fields',
+		name: 'additionalFields',
 		default: {},
 		displayOptions: {
 			show: {
