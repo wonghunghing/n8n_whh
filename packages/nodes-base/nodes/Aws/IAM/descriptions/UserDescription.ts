@@ -93,7 +93,15 @@ export const userOperations: INodeProperties[] = [
 						ignoreHttpStatusErrors: true,
 					},
 					output: {
-						postReceive: [processUsersResponse, simplifyData, handleErrorPostReceive],
+						postReceive: [
+							{
+								type: 'rootProperty',
+								properties: {
+									property: 'GetUserResponse.GetUserResult.User',
+								},
+							},
+							handleErrorPostReceive,
+						],
 					},
 				},
 			},
@@ -169,7 +177,7 @@ export const userOperations: INodeProperties[] = [
 const createFields: INodeProperties[] = [
 	{
 		displayName: 'User Name',
-		name: 'UserName',
+		name: 'userNameNew',
 		default: '',
 		description: 'The username of the new user to create',
 		placeholder: 'e.g. JohnSmith',
@@ -182,6 +190,10 @@ const createFields: INodeProperties[] = [
 		required: true,
 		type: 'string',
 		validateType: 'string',
+		typeOptions: {
+			maxLength: 64,
+			regex: '^[A-Za-z0-9+=,\\.@_-]+$',
+		},
 	},
 	{
 		displayName: 'Additional Fields',
@@ -206,7 +218,7 @@ const createFields: INodeProperties[] = [
 				default: '',
 				description:
 					'The ARN of the managed policy that is used to set the permissions boundary for the user',
-				placeholder: 'e.g. iam:CreateUser',
+				placeholder: 'e.g. arn:aws:iam::123456789012:policy/ExampleBoundaryPolicy',
 				type: 'string',
 				validateType: 'string',
 			},
@@ -276,7 +288,7 @@ const getFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the user name',
 				validation: [
@@ -291,19 +303,6 @@ const getFields: INodeProperties[] = [
 				placeholder: 'e.g. Admins',
 			},
 		],
-	},
-	{
-		displayName: 'Simplify',
-		name: 'simple',
-		type: 'boolean',
-		displayOptions: {
-			show: {
-				resource: ['user'],
-				operation: ['get'],
-			},
-		},
-		default: true,
-		description: 'Whether to return a simplified version of the response instead of the raw data',
 	},
 ];
 
@@ -345,19 +344,6 @@ const getAllFields: INodeProperties[] = [
 			minValue: 1,
 		},
 		validateType: 'number',
-	},
-	{
-		displayName: 'Simplify',
-		name: 'simple',
-		type: 'boolean',
-		displayOptions: {
-			show: {
-				resource: ['user'],
-				operation: ['getAll'],
-			},
-		},
-		default: true,
-		description: 'Whether to return a simplified version of the response instead of the raw data',
 	},
 	{
 		displayName: 'Additional Fields',
@@ -414,7 +400,7 @@ const deleteFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the user name',
 				validation: [
@@ -461,7 +447,7 @@ const updateFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the user name',
 				validation: [
@@ -542,7 +528,7 @@ const addToGroupFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the user name',
 				validation: [
@@ -586,7 +572,7 @@ const addToGroupFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the group name',
 				validation: [
@@ -633,7 +619,7 @@ const removeFromGroupFields: INodeProperties[] = [
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the user name',
 				validation: [
@@ -671,13 +657,13 @@ const removeFromGroupFields: INodeProperties[] = [
 				name: 'list',
 				type: 'list',
 				typeOptions: {
-					searchListMethod: 'searchGroups',
+					searchListMethod: 'searchGroupsForUser',
 					searchable: true,
 				},
 			},
 			{
 				displayName: 'By Name',
-				name: 'User Name',
+				name: 'UserName',
 				type: 'string',
 				hint: 'Enter the group name',
 				validation: [
