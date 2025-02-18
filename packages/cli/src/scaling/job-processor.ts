@@ -76,10 +76,14 @@ export class JobProcessor {
 
 		const workflowId = execution.workflowData.id;
 
-		this.logger.info(`Worker started execution ${executionId} (job ${job.id})`, {
-			executionId,
-			jobId: job.id,
-		});
+		this.logger.info(
+			`Worker started execution ${executionId} (job ${job.id}) (workflow ${workflowId})`,
+			{
+				executionId,
+				jobId: job.id,
+				workflowId,
+			},
+		);
 
 		const startedAt = await this.executionRepository.setRunning(executionId);
 
@@ -163,7 +167,7 @@ export class JobProcessor {
 		additionalData.setExecutionStatus = (status: ExecutionStatus) => {
 			// Can't set the status directly in the queued worker, but it will happen in InternalHook.onWorkflowPostExecute
 			this.logger.debug(
-				`Queued worker execution status for execution ${executionId} (job ${job.id}) is "${status}"`,
+				`Queued worker execution status for execution ${executionId} (job ${job.id}) (workflow ${workflowId}) is "${status}"`,
 			);
 		};
 
@@ -241,14 +245,19 @@ export class JobProcessor {
 
 		delete this.runningJobs[job.id];
 
-		this.logger.info(`Worker finished execution ${executionId} (job ${job.id})`, {
-			executionId,
-			jobId: job.id,
-		});
+		this.logger.info(
+			`Worker finished execution ${executionId} (job ${job.id}) (workflow ${workflowId})`,
+			{
+				executionId,
+				jobId: job.id,
+				workflowId,
+			},
+		);
 
 		const msg: JobFinishedMessage = {
 			kind: 'job-finished',
 			executionId,
+			workflowId,
 			workerId: this.instanceSettings.hostId,
 		};
 
