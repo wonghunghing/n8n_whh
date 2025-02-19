@@ -26,10 +26,12 @@ import type { RunWorkflowChatPayload } from './composables/useChatMessaging';
 import { useNodeTypesStore } from '@/stores/nodeTypes.store';
 import { useCanvasStore } from '@/stores/canvas.store';
 import { useWorkflowsStore } from '@/stores/workflows.store';
+import { useRootStore } from '@/stores/root.store';
 
 const workflowsStore = useWorkflowsStore();
 const canvasStore = useCanvasStore();
 const nodeTypesStore = useNodeTypesStore();
+const rootStore = useRootStore();
 const nodeHelpers = useNodeHelpers();
 const router = useRouter();
 
@@ -38,6 +40,7 @@ const messages = ref<ChatMessage[]>([]);
 const currentSessionId = ref<string>(uuid().replace(/-/g, ''));
 const isDisabled = ref(false);
 const container = ref<HTMLElement>();
+const ws = ref<WebSocket | null>(null);
 
 // Computed properties
 const workflow = computed(() => workflowsStore.getCurrentWorkflow());
@@ -51,6 +54,7 @@ const canvasNodes = computed(() => workflowsStore.allNodes);
 const isLogsOpen = computed(() => workflowsStore.isLogsPanelOpen);
 const previousChatMessages = computed(() => workflowsStore.getPastChatMessages);
 const resultData = computed(() => workflowsStore.getWorkflowRunData);
+
 // Expose internal state for testing
 defineExpose({
 	messages,
@@ -76,7 +80,7 @@ const {
 	getNodeType: nodeTypesStore.getNodeType,
 });
 
-const { sendMessage, getChatMessages, isLoading } = useChatMessaging({
+const { sendMessage, getChatMessages, isLoading, setLoadingState } = useChatMessaging({
 	chatTrigger: chatTriggerNode,
 	connectedNode,
 	messages,
@@ -85,6 +89,7 @@ const { sendMessage, getChatMessages, isLoading } = useChatMessaging({
 	executionResultData: computed(() => workflowsStore.getWorkflowExecution?.data?.resultData),
 	getWorkflowResultDataByNodeName: workflowsStore.getWorkflowResultDataByNodeName,
 	onRunChatWorkflow,
+	ws,
 });
 
 const {
@@ -202,6 +207,29 @@ async function onRunChatWorkflow(payload: RunWorkflowChatPayload) {
 	}
 
 	const response = await runWorkflow(runWorkflowOptions);
+
+	if (response) {
+		ws.value = new WebSocket(
+			`${rootStore.urlBaseEditor}chat?sessionId=${currentSessionId.value}&executionId=${response?.executionId}`,
+		);
+
+		ws.value.onmessage = (event) => {
+			const newMessage: ChatMessage & { sessionId: string } = {
+				text: event.data,
+				sender: 'bot',
+				createdAt: new Date().toISOString(),
+				sessionId: currentSessionId.value,
+				id: uuid(),
+			};
+			messages.value.push(newMessage);
+			setLoadingState(false);
+		};
+
+		await createExecutionPromise();
+		workflowsStore.appendChatMessage(payload.message);
+		return response;
+	}
+	return;
 
 	if (response) {
 		await createExecutionPromise();
