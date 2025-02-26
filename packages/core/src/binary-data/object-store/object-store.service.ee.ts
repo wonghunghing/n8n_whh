@@ -48,8 +48,8 @@ export class ObjectStoreService {
 		this.setReady(true);
 	}
 
-	setReadonly(newState: boolean) {
-		this.isReadOnly = newState;
+	setReadonly(_newState: boolean) {
+		// this.isReadOnly = newState;
 	}
 
 	setReady(newState: boolean) {
