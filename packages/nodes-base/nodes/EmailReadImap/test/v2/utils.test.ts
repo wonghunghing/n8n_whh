@@ -16,6 +16,7 @@ describe('Test IMap V2 utils', () => {
 		const message = {
 			attributes: {
 				uuid: 1,
+				uid: 873,
 				struct: {},
 			},
 			parts: [
@@ -43,7 +44,7 @@ describe('Test IMap V2 utils', () => {
 							headerLines: undefined,
 							html: false,
 							attributes: {
-								uid: undefined,
+								uid: 873,
 							},
 						},
 						binary: undefined,
@@ -59,7 +60,7 @@ describe('Test IMap V2 utils', () => {
 								'0': 'h',
 							},
 							attributes: {
-								uid: undefined,
+								uid: 873,
 							},
 						},
 					},
