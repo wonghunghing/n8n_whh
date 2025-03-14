@@ -11,6 +11,7 @@ import { InsightsMetadataRepository } from '@/databases/repositories/insights-me
 import { InsightsRawRepository } from '@/databases/repositories/insights-raw.repository';
 
 import { getWorkflowSharing } from './workflows';
+export const { type: dbType } = Container.get(GlobalConfig).database;
 
 export const { type: dbType } = Container.get(GlobalConfig).database;
 
@@ -62,6 +63,30 @@ export async function createRawInsightsEvent(
 		}
 	}
 	return await insightsRawRepository.save(event);
+}
+
+export async function createRawInsightsEvents(
+	workflow: WorkflowEntity,
+	parametersArray: Array<{
+		type: InsightsRaw['type'];
+		value: number;
+		timestamp?: DateTime;
+	}>,
+) {
+	const insightsRawRepository = Container.get(InsightsRawRepository);
+	const metadata = await createMetadata(workflow);
+
+	const events = parametersArray.map((parameters) => {
+		const event = new InsightsRaw();
+		event.metaId = metadata.metaId;
+		event.type = parameters.type;
+		event.value = parameters.value;
+		if (parameters.timestamp) {
+			event.timestamp = parameters.timestamp.toUTC().toJSDate();
+		}
+		return event;
+	});
+	await insightsRawRepository.save(events);
 }
 
 export async function createCompactedInsightsEvent(
