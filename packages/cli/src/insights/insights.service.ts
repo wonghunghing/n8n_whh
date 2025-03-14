@@ -64,7 +64,6 @@ export class InsightsService {
 		private readonly globalConfig: GlobalConfig,
 	) {}
 
-	// TODO: Add project caching the corresponding projects and maybe batching.
 	async workflowExecuteAfterHandler(ctx: ExecutionLifecycleHooks, fullRunData: IRun) {
 		if (shouldSkipStatus[fullRunData.status] || shouldSkipMode[fullRunData.mode]) {
 			return;
