@@ -49,14 +49,7 @@ const parser = z
 		// TODO: extract to abstract-entity
 		type: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
 		// TODO: improve, it's either or
-		total_value: z.union([
-			z.string().transform((value) => Number.parseInt(value)),
-			z.number().nullable(),
-		]),
-		avg_runtime: z.union([
-			z.number().nullable(),
-			z.string().transform((value) => Number.parseFloat(value)),
-		]),
+		total_value: z.number(),
 	})
 	.array();
 
@@ -72,7 +65,6 @@ export class InsightsService {
 	constructor(
 		private readonly sharedWorkflowRepository: SharedWorkflowRepository,
 		private readonly insightsByPeriodRepository: InsightsByPeriodRepository,
-		private readonly globalConfig: GlobalConfig,
 		private readonly insightsRawRepository: InsightsRawRepository,
 	) {
 		// TODO: check if there is a better way to schedule this
@@ -180,11 +172,7 @@ export class InsightsService {
 				'period',
 			)
 			.addSelect('insights.type', 'type')
-			.addSelect('SUM(CASE WHEN type = 1 THEN NULL ELSE value END)', 'total_value')
-			.addSelect(
-				'AVG(CASE WHEN insights.type = 1 THEN insights.value ELSE NULL END)',
-				'avg_runtime',
-			)
+			.addSelect('SUM(value)', 'total_value')
 			// Use a cross join with the CTE
 			.innerJoin('date_ranges', 'date_ranges', '1=1')
 			// Filter to only include data from the last 14 days
@@ -205,10 +193,9 @@ export class InsightsService {
 
 		// Organize data by period and type
 		rows.forEach((row) => {
-			const { period, type, total_value, avg_runtime } = row;
+			const { period, type, total_value } = row;
 			if (!data[period]) return;
-
-			data[period].byType[NumberToType[type]] = (total_value ? total_value : avg_runtime) ?? 0;
+			data[period].byType[NumberToType[type]] = total_value ?? 0;
 		});
 
 		// Get values with defaults for missing data
@@ -224,11 +211,18 @@ export class InsightsService {
 		const currentTotal = currentSuccesses + currentFailures;
 		const previousTotal = previousSuccesses + previousFailures;
 
-		const currentFailureRate = currentTotal > 0 ? currentFailures / currentTotal : 0;
-		const previousFailureRate = previousTotal > 0 ? previousFailures / previousTotal : 0;
+		const currentFailureRate =
+			currentTotal > 0 ? Math.round((currentFailures / currentTotal) * 100) / 100 : 0;
+		const previousFailureRate =
+			previousTotal > 0 ? Math.round((previousFailures / previousTotal) * 100) / 100 : 0;
 
-		const currentAvgRuntime = getValueByType('current', 'runtime_ms') ?? 0;
-		const previousAvgRuntime = getValueByType('previous', 'runtime_ms') ?? 0;
+		const currentTotalRuntime = getValueByType('current', 'runtime_ms') ?? 0;
+		const previousTotalRuntime = getValueByType('previous', 'runtime_ms') ?? 0;
+
+		const currentAvgRuntime =
+			currentTotal > 0 ? Math.round((currentTotalRuntime / currentTotal) * 100) / 100 : 0;
+		const previousAvgRuntime =
+			previousTotal > 0 ? Math.round((previousTotalRuntime / previousTotal) * 100) / 100 : 0;
 
 		const currentTimeSaved = getValueByType('current', 'time_saved_min');
 		const previousTimeSaved = getValueByType('previous', 'time_saved_min');
