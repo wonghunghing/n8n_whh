@@ -32,7 +32,6 @@ import { N8nCheckbox } from '@n8n/design-system';
 import { pickBy } from 'lodash-es';
 import { CREDENTIAL_EMPTY_VALUE } from 'n8n-workflow';
 import { isCredentialsResource } from '@/utils/typeGuards';
-import { useInsightsStore } from '@/features/insights/insights.store';
 import InsightsSummary from '@/features/insights/InsightsSummary.vue';
 import { useOverview } from '@/composables/useOverview';
 

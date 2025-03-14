@@ -11,7 +11,6 @@ import {
 	randomDataPoint,
 } from '@/features/insights/chartjs.utils';
 
-
 export type Count = { date: string; count: number };
 
 export type CountResponse = {
