@@ -9,7 +9,12 @@ export const transformInsightsSummary = (data: InsightsSummary | null): Insights
 	data
 		? INSIGHTS_SUMMARY_ORDER.map((key) => ({
 				id: key,
-				value: key === 'timeSaved' ? data[key].value / 3600 : data[key].value, // we want to show saved time in hours
+				value:
+					key === 'timeSaved'
+						? data[key].value / 3600
+						: key === 'averageRunTime'
+							? Math.round(data[key].value / 10) / 100
+							: data[key].value, // we want to show saved time in hours
 				deviation: data[key].deviation,
 				unit: INSIGHTS_UNIT_MAPPING[key],
 			}))
