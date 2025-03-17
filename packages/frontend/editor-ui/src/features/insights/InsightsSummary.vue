@@ -65,7 +65,7 @@ const getDeviationStyles = (d: number) => ({
 								:icon="deviation > 0 ? 'caret-up' : 'caret-down'"
 								color="text-light"
 							/>
-							{{ getSign(deviation) }}{{ deviation }}
+							{{ getSign(deviation) }}{{ unit === '%' ? deviation * 100 : deviation }}
 						</small>
 					</span>
 				</p>
