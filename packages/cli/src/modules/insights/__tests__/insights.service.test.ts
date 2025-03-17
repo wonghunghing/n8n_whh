@@ -42,13 +42,21 @@ async function truncateAll() {
 	}
 }
 
+// Initialize DB once for all tests
+beforeAll(async () => {
+	await testDb.init();
+});
+
+// Terminate DB once after all tests complete
+afterAll(async () => {
+	await testDb.terminate();
+});
+
 describe('workflowExecuteAfterHandler', () => {
 	let insightsService: InsightsService;
 	let insightsRawRepository: InsightsRawRepository;
 	let insightsMetadataRepository: InsightsMetadataRepository;
 	beforeAll(async () => {
-		await testDb.init();
-
 		insightsService = Container.get(InsightsService);
 		insightsRawRepository = Container.get(InsightsRawRepository);
 		insightsMetadataRepository = Container.get(InsightsMetadataRepository);
@@ -264,8 +272,6 @@ describe('getInsightsSummary', () => {
 	let insightsByPeriodRepository: InsightsByPeriodRepository;
 	let insightsMetadataRepository: InsightsMetadataRepository;
 	beforeAll(async () => {
-		await testDb.init();
-
 		insightsService = Container.get(InsightsService);
 		insightsRawRepository = Container.get(InsightsRawRepository);
 		insightsByPeriodRepository = Container.get(InsightsByPeriodRepository);
@@ -284,11 +290,7 @@ describe('getInsightsSummary', () => {
 		metadata = await createMetadata(workflow);
 	});
 
-	afterAll(async () => {
-		await testDb.terminate();
-	});
-
-	test('simple test', async () => {
+	test('compacted data are summarized correctly', async () => {
 		// ARRANGE
 		// last 7 days
 		await createCompactedInsightsEvent(workflow, {
