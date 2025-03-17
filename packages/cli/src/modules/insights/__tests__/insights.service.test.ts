@@ -42,6 +42,16 @@ afterAll(async () => {
 	await testDb.terminate();
 });
 
+// Initialize DB once for all tests
+beforeAll(async () => {
+	await testDb.init();
+});
+
+// Terminate DB once after all tests complete
+afterAll(async () => {
+	await testDb.terminate();
+});
+
 describe('workflowExecuteAfterHandler', () => {
 	let insightsService: InsightsService;
 	let insightsRawRepository: InsightsRawRepository;
