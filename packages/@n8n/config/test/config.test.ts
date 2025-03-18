@@ -309,6 +309,9 @@ describe('GlobalConfig', () => {
 		},
 		insights: {
 			enabled: false,
+			compactionIntervalMinutes: 60,
+			compactionBatchSize: 500,
+			disabledMetrics: [],
 		},
 	};
 
