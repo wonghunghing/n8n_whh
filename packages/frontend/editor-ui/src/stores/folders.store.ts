@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { STORES } from '@/constants';
+import { STORES } from '@n8n/stores/constants';
 import type {
 	FolderCreateResponse,
 	FolderListItem,
@@ -7,7 +7,7 @@ import type {
 	FolderTreeResponseItem,
 } from '@/Interface';
 import * as workflowsApi from '@/api/workflows';
-import { useRootStore } from './root.store';
+import { useRootStore } from '@n8n/stores/root';
 import { ref } from 'vue';
 
 export const useFoldersStore = defineStore(STORES.FOLDERS, () => {
