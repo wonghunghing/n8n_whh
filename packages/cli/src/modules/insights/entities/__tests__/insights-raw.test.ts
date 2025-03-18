@@ -1,4 +1,3 @@
-import { GlobalConfig } from '@n8n/config';
 import { Container } from '@n8n/di';
 import { DateTime } from 'luxon';
 
@@ -12,7 +11,6 @@ import { InsightsRaw } from '../insights-raw';
 import type { TypeUnits } from '../insights-shared';
 
 let insightsRawRepository: InsightsRawRepository;
-const config = Container.get(GlobalConfig);
 
 beforeAll(async () => {
 	await testDb.init();

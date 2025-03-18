@@ -1,4 +1,3 @@
-import { datetimeColumnDefault } from '@/databases/entities/abstract-entity';
 import type { IrreversibleMigration, MigrationContext } from '@/databases/types';
 
 const names = {

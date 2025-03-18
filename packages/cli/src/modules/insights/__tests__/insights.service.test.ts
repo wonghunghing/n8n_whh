@@ -7,6 +7,12 @@ import type { ExecutionStatus, IRun, WorkflowExecuteMode } from 'n8n-workflow';
 import type { Project } from '@/databases/entities/project';
 import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import type { IWorkflowDb } from '@/interfaces';
+import {
+	createCompactedInsightsEvent,
+	createMetadata,
+	createRawInsightsEvent,
+	createRawInsightsEvents,
+} from '@/modules/insights/db/insights';
 import type { TypeUnits } from '@/modules/insights/entities/insights-shared';
 import { InsightsMetadataRepository } from '@/modules/insights/repositories/insights-metadata.repository';
 import { InsightsRawRepository } from '@/modules/insights/repositories/insights-raw.repository';
