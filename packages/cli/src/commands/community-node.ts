@@ -10,10 +10,7 @@ import { BaseCommand } from './base-command';
 export class CommunityNode extends BaseCommand {
 	static description = '\nInstall and uninstall a community node';
 
-	static examples = [
-		'$ n8n node --install --type n8n-nodes-evolution-api.evolutionApi',
-		'$ n8n node --uninstall --type n8n-nodes-evolution-api.evolutionApi',
-	];
+	static examples = ['$ n8n node --uninstall --type n8n-nodes-evolution-api'];
 
 	static flags = {
 		help: Flags.help({ char: 'h' }),
