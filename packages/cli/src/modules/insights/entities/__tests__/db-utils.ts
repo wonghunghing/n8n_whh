@@ -22,8 +22,6 @@ async function getWorkflowSharing(workflow: IWorkflowBase) {
 
 export const { type: dbType } = Container.get(GlobalConfig).database;
 
-export const { type: dbType } = Container.get(GlobalConfig).database;
-
 export async function createMetadata(workflow: WorkflowEntity) {
 	const insightsMetadataRepository = Container.get(InsightsMetadataRepository);
 	const alreadyExisting = await insightsMetadataRepository.findOneBy({ workflowId: workflow.id });
@@ -65,11 +63,7 @@ export async function createRawInsightsEvent(
 	event.type = parameters.type;
 	event.value = parameters.value;
 	if (parameters.timestamp) {
-		if (dbType === 'sqlite') {
-			event.timestamp = parameters.timestamp.toUTC().toSeconds() as any;
-		} else {
-			event.timestamp = parameters.timestamp.toUTC().toJSDate();
-		}
+		event.timestamp = parameters.timestamp.toUTC().toJSDate();
 	}
 	return await insightsRawRepository.save(event);
 }
@@ -91,14 +85,7 @@ export async function createCompactedInsightsEvent(
 	event.type = parameters.type;
 	event.value = parameters.value;
 	event.periodUnit = parameters.periodUnit;
-	if (dbType === 'sqlite') {
-		event.periodStart = parameters.periodStart
-			.toUTC()
-			.startOf(parameters.periodUnit)
-			.toSeconds() as any;
-	} else {
-		event.periodStart = parameters.periodStart.toUTC().startOf(parameters.periodUnit).toJSDate();
-	}
+	event.periodStart = parameters.periodStart.toUTC().startOf(parameters.periodUnit).toJSDate();
 
 	return await insightsByPeriodRepository.save(event);
 }

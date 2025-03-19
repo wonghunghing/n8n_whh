@@ -14,8 +14,7 @@ import { createTeamProject } from '@test-integration/db/projects';
 import { createWorkflow } from '@test-integration/db/workflows';
 import * as testDb from '@test-integration/test-db';
 
-import { createCompactedInsightsEvent, createMetadata } from '../entities/__tests__/db-utils';
-import type { InsightsMetadata } from '../entities/insights-metadata';
+import { createCompactedInsightsEvent } from '../entities/__tests__/db-utils';
 import { InsightsService } from '../insights.service';
 import { InsightsByPeriodRepository } from '../repositories/insights-by-period.repository';
 
@@ -258,26 +257,18 @@ describe('workflowExecuteAfterHandler', () => {
 
 describe('getInsightsSummary', () => {
 	let insightsService: InsightsService;
-	let insightsRawRepository: InsightsRawRepository;
-	let insightsByPeriodRepository: InsightsByPeriodRepository;
-	let insightsMetadataRepository: InsightsMetadataRepository;
 	beforeAll(async () => {
 		insightsService = Container.get(InsightsService);
-		insightsRawRepository = Container.get(InsightsRawRepository);
-		insightsByPeriodRepository = Container.get(InsightsByPeriodRepository);
-		insightsMetadataRepository = Container.get(InsightsMetadataRepository);
 	});
 
 	let project: Project;
 	let workflow: IWorkflowDb & WorkflowEntity;
-	let metadata: InsightsMetadata;
 
 	beforeEach(async () => {
 		await truncateAll();
 
 		project = await createTeamProject();
 		workflow = await createWorkflow({}, project);
-		metadata = await createMetadata(workflow);
 	});
 
 	test('compacted data are summarized correctly', async () => {
