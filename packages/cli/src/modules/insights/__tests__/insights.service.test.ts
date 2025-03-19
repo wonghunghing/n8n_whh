@@ -12,7 +12,7 @@ import {
 	createMetadata,
 	createRawInsightsEvent,
 	createRawInsightsEvents,
-} from '@/modules/insights/db/insights';
+} from '@/modules/insights/entities/__tests__/db-utils';
 import type { TypeUnits } from '@/modules/insights/entities/insights-shared';
 import { InsightsMetadataRepository } from '@/modules/insights/repositories/insights-metadata.repository';
 import { InsightsRawRepository } from '@/modules/insights/repositories/insights-raw.repository';
