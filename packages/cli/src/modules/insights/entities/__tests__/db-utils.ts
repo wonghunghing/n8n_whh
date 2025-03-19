@@ -8,8 +8,10 @@ import { SharedWorkflowRepository } from '@/databases/repositories/shared-workfl
 
 import { InsightsMetadata } from '../../entities/insights-metadata';
 import { InsightsRaw } from '../../entities/insights-raw';
+import { InsightsByPeriodRepository } from '../../repositories/insights-by-period.repository';
 import { InsightsMetadataRepository } from '../../repositories/insights-metadata.repository';
 import { InsightsRawRepository } from '../../repositories/insights-raw.repository';
+import { InsightsByPeriod } from '../insights-by-period';
 
 async function getWorkflowSharing(workflow: IWorkflowBase) {
 	return await Container.get(SharedWorkflowRepository).find({
@@ -69,8 +71,6 @@ export async function createRawInsightsEvent(
 	}
 	return await insightsRawRepository.save(event);
 }
-<<<<<<< HEAD:packages/cli/src/modules/insights/entities/__tests__/db-utils.ts
-=======
 
 export async function createCompactedInsightsEvent(
 	workflow: WorkflowEntity,
@@ -93,4 +93,3 @@ export async function createCompactedInsightsEvent(
 
 	return await insightsByPeriodRepository.save(event);
 }
->>>>>>> 27b0e77665 (works):packages/cli/test/integration/shared/db/insights.ts
