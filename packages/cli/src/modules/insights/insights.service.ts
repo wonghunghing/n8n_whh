@@ -13,7 +13,7 @@ import { InsightsRaw } from '@/modules/insights/entities/insights-raw';
 import { sql } from '@/utils/sql';
 
 import type { TypeUnits } from './entities/insights-shared';
-import { NumberToType } from './entities/insights-shared';
+import { NumberToType, TypeToNumber } from './entities/insights-shared';
 import { InsightsByPeriodRepository } from './repositories/insights-by-period.repository';
 
 const shouldSkipStatus: Record<ExecutionStatus, boolean> = {
@@ -52,7 +52,7 @@ const summaryParser = z
 	})
 	.array();
 
-const byWorkflowParser = z
+const aggregatedInsightsByWorkflowParser = z
 	.object({
 		workflowId: z.string(),
 		workflowName: z.string().optional(),
@@ -67,6 +67,18 @@ const byWorkflowParser = z
 		timeSaved: z.union([z.number(), z.string()]),
 	})
 	.array();
+
+const aggregatedInsightsByTimeParser = z
+	.object({
+		type: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3)]),
+		periodStart: z.string(),
+		runTime: z.union([z.number(), z.string()]),
+		succeeded: z.union([z.number(), z.string()]),
+		failed: z.union([z.number(), z.string()]),
+		timeSaved: z.union([z.number(), z.string()]),
+	})
+	.array();
+
 @Service()
 export class InsightsService {
 	constructor(
@@ -295,7 +307,7 @@ export class InsightsService {
 			sortBy,
 		});
 
-		const data = byWorkflowParser.parse(rows).map((r) => {
+		const data = aggregatedInsightsByWorkflowParser.parse(rows).map((r) => {
 			return {
 				workflowId: r.workflowId,
 				workflowName: r.workflowName,
@@ -315,5 +327,50 @@ export class InsightsService {
 			count,
 			data,
 		};
+	}
+
+	// TODO: add return type once rebased on master and InsightsByTimeAndType is
+	// available
+	// TODO: add tests
+	async getInsightsByTime(nbDays: number, types: TypeUnits[]): Promise<any> {
+		const dbType = this.globalConfig.database.type;
+		const dateSubQuery =
+			dbType === 'sqlite'
+				? `datetime('now', '-${nbDays} days')`
+				: dbType === 'postgresdb'
+					? `CURRENT_DATE - INTERVAL '${nbDays} days'`
+					: `DATE_SUB(CURDATE(), INTERVAL ${nbDays} DAY)`;
+
+		const rawRows = await this.insightsByPeriodRepository
+			.createQueryBuilder('insights')
+			.select([
+				'insights.type',
+				'insights.periodStart AS "periodStart"',
+				`SUM(CASE WHEN insights.type = ${TypeToNumber.runtime_ms} THEN value ELSE 0 END) AS "runTime"`,
+				`SUM(CASE WHEN insights.type = ${TypeToNumber.success} THEN value ELSE 0 END) AS "succeeded"`,
+				`SUM(CASE WHEN insights.type = ${TypeToNumber.failure} THEN value ELSE 0 END) AS "failed"`,
+				`SUM(CASE WHEN insights.type = ${TypeToNumber.time_saved_min} THEN value ELSE 0 END) AS "timeSaved"`,
+			])
+			.where(`insights.periodStart >= ${dateSubQuery}`)
+			.andWhere('insights.type IN (:...types)', { types: types.map((t) => TypeToNumber[t]) })
+			.addGroupBy('insights.periodStart') // TODO: group by specific time scale (start with day)
+			.orderBy('insights.periodStart', 'ASC')
+			.getRawMany();
+
+		const rows = aggregatedInsightsByTimeParser.parse(rawRows);
+
+		return rows.map((r) => {
+			return {
+				date: r.periodStart,
+				values: {
+					total: Number(r.succeeded) + Number(r.failed),
+					succeeded: Number(r.succeeded),
+					failed: Number(r.failed),
+					failureRate: Number(r.failed) / (Number(r.succeeded) + Number(r.failed)),
+					averageRunTime: Number(r.runTime) / (Number(r.succeeded) + Number(r.failed)),
+					timeSaved: Number(r.timeSaved),
+				},
+			};
+		});
 	}
 }
