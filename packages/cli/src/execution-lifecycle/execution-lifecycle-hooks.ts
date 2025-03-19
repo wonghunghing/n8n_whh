@@ -1,3 +1,4 @@
+import { ModuleRegistry } from '@n8n/backend-core';
 import { Container } from '@n8n/di';
 import { stringify } from 'flatted';
 import { ErrorReporter, Logger, InstanceSettings, ExecutionLifecycleHooks } from 'n8n-core';
@@ -476,5 +477,6 @@ export function getLifecycleHooksForRegularMain(
 	hookFunctionsSaveProgress(hooks, optionalParameters);
 	hookFunctionsStatistics(hooks);
 	hookFunctionsExternalHooks(hooks);
+	Container.get(ModuleRegistry).registerLifecycleHooks(hooks);
 	return hooks;
 }
