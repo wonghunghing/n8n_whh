@@ -42,16 +42,6 @@ afterAll(async () => {
 	await testDb.terminate();
 });
 
-// Initialize DB once for all tests
-beforeAll(async () => {
-	await testDb.init();
-});
-
-// Terminate DB once after all tests complete
-afterAll(async () => {
-	await testDb.terminate();
-});
-
 describe('workflowExecuteAfterHandler', () => {
 	let insightsService: InsightsService;
 	let insightsRawRepository: InsightsRawRepository;
@@ -283,7 +273,7 @@ describe('getInsightsSummary', () => {
 	let metadata: InsightsMetadata;
 
 	beforeEach(async () => {
-		await testDb.truncate(['InsightsRaw', 'InsightsMetadata', 'InsightsByPeriod']);
+		await truncateAll();
 
 		project = await createTeamProject();
 		workflow = await createWorkflow({}, project);
