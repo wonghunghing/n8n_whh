@@ -4,30 +4,20 @@ import { DateTime } from 'luxon';
 import type { ExecutionLifecycleHooks } from 'n8n-core';
 import type { ExecutionStatus, IRun, WorkflowExecuteMode } from 'n8n-workflow';
 
-<<<<<<< HEAD:packages/cli/src/modules/insights/__tests__/insights.service.test.ts
 import type { Project } from '@/databases/entities/project';
 import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
 import type { IWorkflowDb } from '@/interfaces';
-import type { TypeUnits } from '@/modules/insights/entities/insights-shared';
-import { InsightsMetadataRepository } from '@/modules/insights/repositories/insights-metadata.repository';
-import { InsightsRawRepository } from '@/modules/insights/repositories/insights-raw.repository';
-=======
-import type { InsightsMetadata } from '@/databases/entities/insights-metadata';
-import type { TypeUnits } from '@/databases/entities/insights-shared';
-import type { Project } from '@/databases/entities/project';
-import type { WorkflowEntity } from '@/databases/entities/workflow-entity';
-import { InsightsByPeriodRepository } from '@/databases/repositories/insights-by-period.repository';
-import { InsightsMetadataRepository } from '@/databases/repositories/insights-metadata.repository';
-import { InsightsRawRepository } from '@/databases/repositories/insights-raw.repository';
-import type { IWorkflowDb } from '@/interfaces';
-import { createCompactedInsightsEvent, createMetadata } from '@test-integration/db/insights';
->>>>>>> 27b0e77665 (works):packages/cli/src/insights/__tests__/insights.service.test.ts
 import { createTeamProject } from '@test-integration/db/projects';
 import { createWorkflow } from '@test-integration/db/workflows';
 import * as testDb from '@test-integration/test-db';
 
+import { createCompactedInsightsEvent, createMetadata } from '../entities/__tests__/db-utils';
+import type { InsightsMetadata } from '../entities/insights-metadata';
+import type { TypeUnits } from '../entities/insights-shared';
 import { InsightsService } from '../insights.service';
 import { InsightsByPeriodRepository } from '../repositories/insights-by-period.repository';
+import { InsightsMetadataRepository } from '../repositories/insights-metadata.repository';
+import { InsightsRawRepository } from '../repositories/insights-raw.repository';
 
 async function truncateAll() {
 	const insightsRawRepository = Container.get(InsightsRawRepository);
