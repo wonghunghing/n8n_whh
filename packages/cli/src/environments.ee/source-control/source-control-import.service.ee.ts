@@ -17,6 +17,7 @@ import type { User } from '@/databases/entities/user';
 import type { Variables } from '@/databases/entities/variables';
 import type { WorkflowTagMapping } from '@/databases/entities/workflow-tag-mapping';
 import { CredentialsRepository } from '@/databases/repositories/credentials.repository';
+import { FolderRepository } from '@/databases/repositories/folder.repository';
 import { ProjectRepository } from '@/databases/repositories/project.repository';
 import { SharedCredentialsRepository } from '@/databases/repositories/shared-credentials.repository';
 import { SharedWorkflowRepository } from '@/databases/repositories/shared-workflow.repository';
@@ -33,6 +34,7 @@ import { WorkflowService } from '@/workflows/workflow.service';
 
 import {
 	SOURCE_CONTROL_CREDENTIAL_EXPORT_FOLDER,
+	SOURCE_CONTROL_FOLDERS_EXPORT_FILE,
 	SOURCE_CONTROL_GIT_FOLDER,
 	SOURCE_CONTROL_TAGS_EXPORT_FILE,
 	SOURCE_CONTROL_VARIABLES_EXPORT_FILE,
@@ -40,6 +42,7 @@ import {
 } from './constants';
 import { getCredentialExportPath, getWorkflowExportPath } from './source-control-helper.ee';
 import type { ExportableCredential } from './types/exportable-credential';
+import type { ExportableFolder } from './types/exportable-folders';
 import type { ResourceOwner } from './types/resource-owner';
 import type { SourceControlWorkflowVersionId } from './types/source-control-workflow-version-id';
 import { VariablesService } from '../variables/variables.service.ee';
@@ -69,6 +72,7 @@ export class SourceControlImportService {
 		private readonly workflowService: WorkflowService,
 		private readonly credentialsService: CredentialsService,
 		private readonly tagService: TagService,
+		private readonly folderRepository: FolderRepository,
 		instanceSettings: InstanceSettings,
 	) {
 		this.gitFolder = path.join(instanceSettings.n8nFolder, SOURCE_CONTROL_GIT_FOLDER);
@@ -88,6 +92,8 @@ export class SourceControlImportService {
 			remoteWorkflowFiles.map(async (file) => {
 				this.logger.debug(`Parsing workflow file ${file}`);
 				const remote = jsonParse<IWorkflowToImport>(await fsReadFile(file, { encoding: 'utf8' }));
+				console.log('this is the remote', remote);
+
 				if (!remote?.id) {
 					return undefined;
 				}
@@ -95,6 +101,9 @@ export class SourceControlImportService {
 					id: remote.id,
 					versionId: remote.versionId,
 					name: remote.name,
+					//@ts-ignore asasas
+					// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+					parentFolderId: remote?.parentFolderId ?? null,
 					remoteId: remote.id,
 					filename: getWorkflowExportPath(remote.id, this.workflowExportFolder),
 				} as SourceControlWorkflowVersionId;
@@ -107,7 +116,16 @@ export class SourceControlImportService {
 
 	async getLocalVersionIdsFromDb(): Promise<SourceControlWorkflowVersionId[]> {
 		const localWorkflows = await this.workflowRepository.find({
-			select: ['id', 'name', 'versionId', 'updatedAt'],
+			relations: ['parentFolder'],
+			select: {
+				id: true,
+				versionId: true,
+				name: true,
+				updatedAt: true,
+				parentFolder: {
+					id: true,
+				},
+			},
 		});
 		return localWorkflows.map((local) => {
 			let updatedAt: Date;
@@ -127,6 +145,7 @@ export class SourceControlImportService {
 				versionId: local.versionId,
 				name: local.name,
 				localId: local.id,
+				parentFolderId: local.parentFolder?.id ?? null,
 				filename: getWorkflowExportPath(local.id, this.workflowExportFolder),
 				updatedAt: updatedAt.toISOString(),
 			};
@@ -190,6 +209,52 @@ export class SourceControlImportService {
 		return await this.variablesService.getAllCached();
 	}
 
+	async getRemoteFoldersAndMappingsFromFile(): Promise<{
+		folders: ExportableFolder[];
+	}> {
+		const foldersFile = await glob(SOURCE_CONTROL_FOLDERS_EXPORT_FILE, {
+			cwd: this.gitFolder,
+			absolute: true,
+		});
+		if (foldersFile.length > 0) {
+			this.logger.debug(`Importing folders from file ${foldersFile[0]}`);
+			const mappedFolders = jsonParse<{
+				folders: ExportableFolder[];
+			}>(await fsReadFile(foldersFile[0], { encoding: 'utf8' }), {
+				fallbackValue: { folders: [] },
+			});
+			return mappedFolders;
+		}
+		return { folders: [] };
+	}
+
+	async getLocalFoldersAndMappingsFromDb(): Promise<{
+		folders: ExportableFolder[];
+	}> {
+		const localFolders = await this.folderRepository.find({
+			relations: ['parentFolder', 'homeProject'],
+			select: {
+				id: true,
+				name: true,
+				createdAt: true,
+				updatedAt: true,
+				parentFolder: { id: true },
+				homeProject: { id: true },
+			},
+		});
+
+		return {
+			folders: localFolders.map((f) => ({
+				id: f.id,
+				name: f.name,
+				parentFolderId: f.parentFolder?.id ?? null,
+				homeProjectId: f.homeProject.id,
+				createdAt: f.createdAt.toISOString(),
+				updatedAt: f.updatedAt.toISOString(),
+			})),
+		};
+	}
+
 	async getRemoteTagsAndMappingsFromFile(): Promise<{
 		tags: TagEntity[];
 		mappings: WorkflowTagMapping[];
@@ -229,6 +294,10 @@ export class SourceControlImportService {
 		const existingWorkflows = await this.workflowRepository.findByIds(candidateIds, {
 			fields: ['id', 'name', 'versionId', 'active'],
 		});
+
+		const folders = await this.folderRepository.find({ select: ['id'] });
+		const existingFolderIds = folders.map((f) => f.id);
+
 		const allSharedWorkflows = await this.sharedWorkflowRepository.findWithFields(candidateIds, {
 			select: ['workflowId', 'role', 'projectId'],
 		});
@@ -247,8 +316,20 @@ export class SourceControlImportService {
 			}
 			const existingWorkflow = existingWorkflows.find((e) => e.id === importedWorkflow.id);
 			importedWorkflow.active = existingWorkflow?.active ?? false;
+			//@ts-ignore
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-argument
+			importedWorkflow.parentFolderId = existingFolderIds.includes(importedWorkflow.parentFolderId)
+				? //@ts-ignore
+					importedWorkflow.parentFolderId
+				: null;
+			console.log('this is the imported workflow', importedWorkflow);
 			this.logger.debug(`Updating workflow id ${importedWorkflow.id ?? 'new'}`);
-			const upsertResult = await this.workflowRepository.upsert({ ...importedWorkflow }, ['id']);
+			const upsertResult = await this.workflowRepository.upsert(
+				//@ts-ignore
+				// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+				{ ...importedWorkflow, parentFolder: { id: importedWorkflow.parentFolderId } },
+				['id'],
+			);
 			if (upsertResult?.identifiers?.length !== 1) {
 				throw new UnexpectedError('Failed to upsert workflow', {
 					extra: { workflowId: importedWorkflow.id ?? 'new' },
@@ -440,6 +521,69 @@ export class SourceControlImportService {
 		return mappedTags;
 	}
 
+	async importFoldersFromWorkFolder(user: User, candidate: SourceControlledFile) {
+		let mappedFolders;
+		const projects = await this.projectRepository.find();
+		const personalProject = await this.projectRepository.getPersonalProjectForUserOrFail(user.id);
+
+		try {
+			this.logger.debug(`Importing folders from file ${candidate.file}`);
+			mappedFolders = jsonParse<{
+				folders: ExportableFolder[];
+			}>(await fsReadFile(candidate.file, { encoding: 'utf8' }), {
+				fallbackValue: { folders: [] },
+			});
+		} catch (e) {
+			const error = ensureError(e);
+			this.logger.error(`Failed to import folders from file ${candidate.file}`, { error });
+			return;
+		}
+
+		if (mappedFolders.folders.length === 0) {
+			return;
+		}
+
+		await Promise.all(
+			mappedFolders.folders.map(async (folder) => {
+				const findByName = await this.folderRepository.findOne({
+					where: { name: folder.name },
+					select: ['id'],
+				});
+				if (findByName && findByName.id !== folder.id) {
+					throw new UserError(
+						`A folder with the name <strong>${folder.name}</strong> already exists locally.<br />Please either rename the local folder, or the remote one with the id <strong>${folder.id}</strong> in the folders.json file.`,
+					);
+				}
+
+				const folderCopy = this.folderRepository.create({
+					id: folder.id,
+					name: folder.name,
+					homeProject: {
+						id: projects.find((p) => p.id === folder.homeProjectId)?.id ?? personalProject.id,
+					},
+				});
+				await this.folderRepository.upsert(folderCopy, {
+					skipUpdateIfNoValuesChanged: true,
+					conflictPaths: { id: true },
+				});
+			}),
+		);
+
+		// After folders are created, setup the parentFolder relationship
+		await Promise.all(
+			mappedFolders.folders.map(async (folder) => {
+				await this.folderRepository.update(
+					{ id: folder.id },
+					{
+						parentFolder: folder.parentFolderId ? { id: folder.parentFolderId } : null,
+					},
+				);
+			}),
+		);
+
+		return mappedFolders;
+	}
+
 	async importVariablesFromWorkFolder(
 		candidate: SourceControlledFile,
 		valueOverrides?: {
@@ -528,6 +672,12 @@ export class SourceControlImportService {
 	async deleteTagsNotInWorkfolder(candidates: SourceControlledFile[]) {
 		for (const candidate of candidates) {
 			await this.tagService.delete(candidate.id);
+		}
+	}
+
+	async deleteFoldersNotInWorkfolder(candidates: SourceControlledFile[]) {
+		for (const candidate of candidates) {
+			await this.folderRepository.delete(candidate.id);
 		}
 	}
 
