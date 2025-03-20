@@ -58,7 +58,7 @@ const getImpactStyle = (id: keyof InsightsSummary, value: number) => {
 		<N8nLoading v-if="loading" :class="$style.loading" :cols="5" />
 		<ul v-else>
 			<li v-for="{ id, value, deviation, unit, to } in summaryWithRouteLocations" :key="id">
-				<RouterLink class="insight-summary" :to="to" exact-active-class="insight-summary--active">
+				<RouterLink :to="to" :exact-active-class="$style.activeTab">
 					<strong>{{ summaryTitles[id] }}</strong>
 					<span v-if="value === 0 && id === 'timeSaved'" :class="$style.empty">
 						<em>--</em>
@@ -105,20 +105,18 @@ const getImpactStyle = (id: keyof InsightsSummary, value: number) => {
 	ul {
 		display: flex;
 		align-items: stretch;
-		justify-content: flex-start;
+		justify-content: space-evenly;
 		border: var(--border-width-base) var(--border-style-base) var(--color-foreground-base);
 		border-radius: 6px;
 		list-style: none;
-		background-color: var(--color-background-xlight);
 		overflow-x: auto;
 
 		li {
 			display: flex;
-			justify-content: flex-start;
-			align-items: center;
-			flex: 1;
+			justify-content: stretch;
+			align-items: stretch;
+			flex: 1 0;
 			border-left: var(--border-width-base) var(--border-style-base) var(--color-foreground-base);
-			padding: 0 var(--spacing-xl) 0 var(--spacing-l);
 
 			&:first-child {
 				border-left: 0;
@@ -127,6 +125,24 @@ const getImpactStyle = (id: keyof InsightsSummary, value: number) => {
 
 		a {
 			display: grid;
+			align-items: center;
+			width: 100%;
+			height: 100%;
+			padding: var(--spacing-m) var(--spacing-l);
+			border-bottom: 4px solid transparent;
+
+			&:hover {
+				background-color: var(--color-background-xlight);
+				transition: background-color 0.3s;
+			}
+
+			&.activeTab {
+				background-color: var(--color-background-xlight);
+				border-color: var(--color-primary);
+				transition:
+					background-color,
+					border-color 0.3s ease-in-out;
+			}
 
 			strong {
 				color: var(--color-text-dark);
