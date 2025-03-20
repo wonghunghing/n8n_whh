@@ -329,7 +329,7 @@ describe('getInsightsSummary', () => {
 		let workflow: IWorkflowDb & WorkflowEntity;
 
 		beforeEach(async () => {
-			await testDb.truncate(['InsightsRaw', 'InsightsMetadata', 'InsightsByPeriod']);
+			await truncateAll();
 
 			project = await createTeamProject();
 			workflow = await createWorkflow({}, project);
