@@ -8,6 +8,7 @@ import type {
 } from 'n8n-workflow';
 
 import { ExecutionRepository } from '@/databases/repositories/execution.repository';
+import { ModuleRegistry } from '@/decorators/module';
 import { EventService } from '@/events/event.service';
 import { ExternalHooks } from '@/external-hooks';
 import { Push } from '@/push';
@@ -398,7 +399,7 @@ export function getLifecycleHooksForScalingWorker(
 }
 
 /**
- * Returns ExecutionLifecycleHooks instance for main process if workflow runs via worker
+ * Returns ExecutionLifecycleHooks instance for main process in scaling mode.
  */
 export function getLifecycleHooksForScalingMain(
 	data: IWorkflowExecutionDataProcess,
@@ -454,11 +455,13 @@ export function getLifecycleHooksForScalingMain(
 	hooks.handlers.nodeExecuteBefore = [];
 	hooks.handlers.nodeExecuteAfter = [];
 
+	Container.get(ModuleRegistry).registerLifecycleHooks(hooks);
+
 	return hooks;
 }
 
 /**
- * Returns ExecutionLifecycleHooks instance for running the main workflow
+ * Returns ExecutionLifecycleHooks instance for the main process in regular mode
  */
 export function getLifecycleHooksForRegularMain(
 	data: IWorkflowExecutionDataProcess,
@@ -476,5 +479,6 @@ export function getLifecycleHooksForRegularMain(
 	hookFunctionsSaveProgress(hooks, optionalParameters);
 	hookFunctionsStatistics(hooks);
 	hookFunctionsExternalHooks(hooks);
+	Container.get(ModuleRegistry).registerLifecycleHooks(hooks);
 	return hooks;
 }
